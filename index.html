@@ -1,0 +1,1981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Professional Invoice System</title>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
+
+<!-- jsPDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+:root {
+  --primary: #4361ee;
+  --primary-dark: #3a56d4;
+  --secondary: #7209b7;
+  --success: #4cc9f0;
+  --danger: #f72585;
+  --warning: #f8961e;
+  --light: #f8f9fa;
+  --dark: #212529;
+  --gray: #6c757d;
+  --border: #dee2e6;
+  --shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  --shadow-lg: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body { 
+  font-family: 'Roboto', sans-serif; 
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  margin: 0; 
+  padding: 0; 
+  line-height: 1.6;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.container { 
+  width: 95%;
+  max-width: 1200px;
+  margin: 20px auto; 
+  background: #fff; 
+  padding: 0;
+  border-radius: 15px; 
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+.header {
+  background: linear-gradient(to right, var(--primary), var(--secondary));
+  color: white;
+  padding: 20px;
+  text-align: center;
+}
+
+.header h1 {
+  margin: 0;
+  font-weight: 700;
+  font-size: 2rem;
+}
+
+.header p {
+  margin: 5px 0 0;
+  opacity: 0.9;
+}
+
+.content {
+  display: flex;
+  min-height: 600px;
+}
+
+.sidebar {
+  width: 250px;
+  background: var(--light);
+  padding: 20px;
+  border-right: 1px solid var(--border);
+}
+
+.sidebar-menu {
+  list-style: none;
+}
+
+.sidebar-menu li {
+  margin-bottom: 10px;
+}
+
+.sidebar-menu a {
+  display: flex;
+  align-items: center;
+  padding: 12px 15px;
+  color: var(--dark);
+  text-decoration: none;
+  border-radius: 8px;
+  transition: all 0.3s;
+}
+
+.sidebar-menu a:hover, .sidebar-menu a.active {
+  background: var(--primary);
+  color: white;
+}
+
+.sidebar-menu i {
+  margin-right: 10px;
+  width: 20px;
+  text-align: center;
+}
+
+.main-content {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.card {
+  background: white;
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.card-header {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 15px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-header h2 {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+h2, h3, h4 { 
+  margin-bottom: 15px; 
+  color: var(--dark);
+}
+
+h2 {
+  text-align: center;
+}
+
+input, select, button, textarea { 
+  padding: 12px; 
+  margin: 5px 0; 
+  border-radius: 8px; 
+  border: 1px solid var(--border); 
+  width: 100%; 
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+}
+
+button { 
+  background: var(--primary); 
+  color: #fff; 
+  border: none; 
+  cursor: pointer; 
+  transition: .3s; 
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+button:hover { 
+  background: var(--primary-dark); 
+  transform: translateY(-2px);
+}
+
+button.secondary {
+  background: var(--gray);
+}
+
+button.secondary:hover {
+  background: #5a6268;
+}
+
+button.success {
+  background: var(--success);
+}
+
+button.success:hover {
+  background: #3aa8d0;
+}
+
+button.danger {
+  background: var(--danger);
+}
+
+button.danger:hover {
+  background: #e11574;
+}
+
+button.warning {
+  background: var(--warning);
+}
+
+button.warning:hover {
+  background: #e0861b;
+}
+
+.form-section {
+  background: var(--light);
+  padding: 20px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  border-left: 4px solid var(--primary);
+}
+
+.form-section h4 {
+  margin-top: 0;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.form-row {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.form-row > * {
+  flex: 1;
+}
+
+.item-row { 
+  display: flex; 
+  gap: 10px; 
+  margin-bottom: 10px; 
+  align-items: center;
+}
+
+.item-row input { 
+  flex: 1; 
+}
+
+.item-row .description { flex: 3; }
+.item-row .quantity { flex: 1; }
+.item-row .unitPrice { flex: 1; }
+.item-row .total { flex: 1; }
+.item-row button { 
+  flex: 0 0 50px; 
+  padding: 10px;
+}
+
+#signatureCanvas { 
+  border: 1px solid var(--border); 
+  border-radius: 8px;
+  cursor: crosshair;
+  background: white;
+}
+
+#invoice-preview { 
+  margin-top: 20px; 
+  background: #fff; 
+  padding: 30px; 
+  border-radius: 10px; 
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+
+.invoice-table { 
+  width: 100%; 
+  border-collapse: collapse; 
+  margin-top: 20px; 
+}
+
+.invoice-table th, .invoice-table td { 
+  border: 1px solid var(--border); 
+  padding: 12px; 
+  text-align: left; 
+}
+
+.invoice-table th { 
+  background: var(--light); 
+  font-weight: 600;
+}
+
+.invoice-footer { 
+  margin-top: 20px; 
+  text-align: right; 
+}
+
+.hidden { 
+  display: none; 
+}
+
+.tab-container {
+  display: flex;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--light);
+  border-radius: 8px;
+  padding: 5px;
+}
+
+.tab {
+  padding: 12px 20px;
+  cursor: pointer;
+  border-radius: 6px;
+  flex: 1;
+  text-align: center;
+  transition: all 0.3s;
+  font-weight: 500;
+}
+
+.tab.active {
+  background: var(--primary);
+  color: white;
+}
+
+.invoice-list {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.invoice-item {
+  padding: 15px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 15px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.invoice-item:hover {
+  background: var(--light);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow);
+}
+
+.invoice-item-header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.invoice-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.invoice-actions button {
+  flex: 1;
+}
+
+.profile-container {
+  display: flex;
+  gap: 20px;
+}
+
+.profile-sidebar {
+  width: 250px;
+}
+
+.profile-content {
+  flex: 1;
+}
+
+.profile-card {
+  text-align: center;
+  padding: 30px 20px;
+}
+
+.profile-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  margin: 0 auto 20px;
+}
+
+.stats-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: var(--shadow);
+  border-top: 4px solid var(--primary);
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.stat-label {
+  color: var(--gray);
+  font-size: 0.9rem;
+}
+
+.login-container {
+  max-width: 400px;
+  width: 90%;
+  margin: 0 auto;
+  padding: 40px 30px;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.login-header h2 {
+  color: var(--primary);
+  margin-bottom: 10px;
+}
+
+.login-header p {
+  color: var(--gray);
+}
+
+.login-card {
+  background: white;
+  border-radius: 15px;
+  padding: 30px;
+  box-shadow: var(--shadow-lg);
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: var(--dark);
+}
+
+.login-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 25px;
+}
+
+.divider {
+  text-align: center;
+  margin: 20px 0;
+  position: relative;
+  color: var(--gray);
+}
+
+.divider::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--border);
+  z-index: 1;
+}
+
+.divider span {
+  background: white;
+  padding: 0 15px;
+  position: relative;
+  z-index: 2;
+}
+
+.social-login {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.social-btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--light);
+  color: var(--dark);
+  border: 1px solid var(--border);
+}
+
+.social-btn:hover {
+  background: #e9ecef;
+  transform: none;
+}
+
+.alert {
+  padding: 12px 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.alert-error {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.alert-success {
+  background: #d1edff;
+  color: #0c5460;
+  border: 1px solid #bee5eb;
+}
+
+@media (max-width: 768px) {
+  .content {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  
+  .form-row, .item-row { 
+    flex-direction: column; 
+  }
+  
+  .tab-container {
+    flex-wrap: wrap;
+  }
+  
+  .tab {
+    flex: 1;
+    min-width: 120px;
+    text-align: center;
+  }
+  
+  .invoice-actions {
+    flex-direction: column;
+  }
+  
+  .stats-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .profile-container {
+    flex-direction: column;
+  }
+  
+  .profile-sidebar {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    width: 100%;
+    border-radius: 0;
+    margin: 0;
+  }
+  
+  .main-content {
+    padding: 15px;
+  }
+  
+  input, select, button {
+    padding: 10px;
+  }
+  
+  .header h1 {
+    font-size: 1.5rem;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Header -->
+  <div class="header">
+    <h1><i class="fas fa-file-invoice-dollar"></i> InvoicePro</h1>
+    <p>Professional Invoice Management System</p>
+  </div>
+
+  <div class="content">
+    <!-- Sidebar Navigation -->
+    <div class="sidebar hidden" id="sidebar">
+      <ul class="sidebar-menu">
+        <li><a href="#" class="active" data-tab="dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+        <li><a href="#" data-tab="create"><i class="fas fa-plus-circle"></i> Create Invoice</a></li>
+        <li><a href="#" data-tab="history"><i class="fas fa-history"></i> Invoice History</a></li>
+        <li><a href="#" data-tab="profile"><i class="fas fa-user"></i> Profile</a></li>
+        <li><a href="#" id="sidebarLogout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+      </ul>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+      <!-- Login Form -->
+      <div id="loginForm">
+        <div class="login-container">
+          <div class="login-header">
+            <h2>Welcome Back</h2>
+            <p>Sign in to your account to continue</p>
+          </div>
+          
+          <div class="login-card">
+            <div id="login-error-msg" class="alert alert-error hidden">
+              <i class="fas fa-exclamation-circle"></i>
+              <span id="error-text"></span>
+            </div>
+            
+            <div class="form-group">
+              <label for="email">Email Address</label>
+              <input type="email" id="email" placeholder="Enter your email">
+            </div>
+            
+            <div class="form-group">
+              <label for="password">Password</label>
+              <input type="password" id="password" placeholder="Enter your password">
+            </div>
+            
+            <button id="loginBtn"><i class="fas fa-sign-in-alt"></i> Sign In</button>
+            
+            <div class="divider"><span>Or continue with</span></div>
+            
+            <div class="social-login">
+              <button class="social-btn">
+                <i class="fab fa-google"></i> Google
+              </button>
+              <button class="social-btn">
+                <i class="fab fa-facebook-f"></i> Facebook
+              </button>
+            </div>
+            
+            <div class="login-actions">
+              <button id="signupBtn" class="secondary"><i class="fas fa-user-plus"></i> Create Account</button>
+              <button class="secondary"><i class="fas fa-key"></i> Forgot Password?</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dashboard -->
+      <div id="dashboard" class="hidden">
+        <div class="card">
+          <div class="card-header">
+            <h2><i class="fas fa-tachometer-alt"></i> Dashboard</h2>
+            <span id="welcomeMessage">Welcome back!</span>
+          </div>
+          
+          <div class="stats-container">
+            <div class="stat-card">
+              <div class="stat-value" id="totalInvoices">0</div>
+              <div class="stat-label">Total Invoices</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="paidInvoices">0</div>
+              <div class="stat-label">Paid Invoices</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="pendingInvoices">0</div>
+              <div class="stat-label">Pending Invoices</div>
+            </div>
+          </div>
+          
+          <div class="invoice-actions">
+            <button id="quickCreate" class="success"><i class="fas fa-plus"></i> Create New Invoice</button>
+            <button id="viewHistory" class="secondary"><i class="fas fa-history"></i> View History</button>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div class="card-header">
+            <h2><i class="fas fa-chart-line"></i> Recent Activity</h2>
+          </div>
+          <div id="recentInvoices" class="invoice-list">
+            <!-- Recent invoices will be loaded here -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Invoice System -->
+      <div id="invoice-system" class="hidden">
+        <div class="card">
+          <div class="card-header">
+            <h2 id="pageTitle">Create Invoice</h2>
+            <button id="logoutBtn" class="secondary"><i class="fas fa-sign-out-alt"></i> Logout</button>
+          </div>
+          
+          <div class="tab-container">
+            <div class="tab active" data-tab="create">Create Invoice</div>
+            <div class="tab" data-tab="history">Invoice History</div>
+          </div>
+          
+          <!-- Create Invoice Tab -->
+          <div id="create-tab" class="tab-content">
+            <div id="save-alert" class="alert alert-success hidden">
+              <i class="fas fa-check-circle"></i>
+              <span id="save-message">Invoice saved successfully!</span>
+            </div>
+            
+            <div class="form-section">
+              <h4><i class="fas fa-building"></i> Company & Customer Details</h4>
+              <input type="text" id="companyName" placeholder="Company Name">
+              <div class="form-row">
+                <input type="date" id="invoiceDate">
+                <input type="text" id="invoiceNumber" placeholder="Invoice Number">
+              </div>
+              <input type="text" id="customerName" placeholder="Customer Name">
+              <input type="text" id="customerAddress" placeholder="Customer Address">
+              <input type="email" id="customerEmail" placeholder="Customer Email (optional)">
+            </div>
+
+            <div class="form-section">
+              <h4><i class="fas fa-boxes"></i> Products / Services</h4>
+              <div id="items-container">
+                <div class="item-row">
+                  <input type="text" class="description" placeholder="Description">
+                  <input type="number" class="quantity" placeholder="Qty" min="1" value="1">
+                  <input type="number" class="unitPrice" placeholder="Price" min="0" step="0.01">
+                  <input type="number" class="total" placeholder="Total" readonly>
+                  <button class="removeItem danger" title="Remove Item"><i class="fas fa-times"></i></button>
+                </div>
+              </div>
+              <button id="addItem" class="secondary"><i class="fas fa-plus"></i> Add Item</button>
+            </div>
+
+            <div class="form-section">
+              <h4><i class="fas fa-file-invoice"></i> Additional Details</h4>
+              <div class="form-row">
+                <input type="number" id="discount" value="0" placeholder="Discount" min="0" step="0.01">
+                <input type="number" id="tax" value="0" placeholder="Tax (%)" min="0" step="0.01">
+              </div>
+              <textarea id="notes" placeholder="Additional Notes (optional)" rows="3"></textarea>
+              
+              <label>Signature:</label>
+              <canvas id="signatureCanvas" width="300" height="100"></canvas>
+              <button id="clearSignature" class="secondary"><i class="fas fa-eraser"></i> Clear Signature</button>
+              
+              <select id="pageSize">
+                <option value="full">Full A4</option>
+                <option value="half">Half A4</option>
+              </select>
+            </div>
+
+            <div class="invoice-actions">
+              <button id="generateInvoice" class="success"><i class="fas fa-file-invoice"></i> Generate Invoice</button>
+              <button id="downloadInvoice" class="secondary"><i class="fas fa-download"></i> Download PDF</button>
+              <button id="shareInvoice" class="secondary"><i class="fas fa-share-alt"></i> Share Invoice</button>
+              <button id="saveDraft" class="warning"><i class="fas fa-save"></i> Save Draft</button>
+            </div>
+
+            <div id="invoice-preview"></div>
+          </div>
+          
+          <!-- Invoice History Tab -->
+          <div id="history-tab" class="tab-content hidden">
+            <div class="form-row">
+              <input type="text" id="searchInvoices" placeholder="Search invoices...">
+              <select id="filterStatus">
+                <option value="all">All Invoices</option>
+                <option value="draft">Drafts</option>
+                <option value="sent">Sent</option>
+                <option value="paid">Paid</option>
+              </select>
+            </div>
+            
+            <div class="invoice-list" id="invoiceList">
+              <!-- Invoices will be loaded here -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Profile Section -->
+      <div id="profile" class="hidden">
+        <div class="card">
+          <div class="card-header">
+            <h2><i class="fas fa-user"></i> User Profile</h2>
+          </div>
+          
+          <div class="profile-container">
+            <div class="profile-sidebar">
+              <div class="profile-card card">
+                <div class="profile-avatar">
+                  <i class="fas fa-user"></i>
+                </div>
+                <h3 id="profileName">User Name</h3>
+                <p id="profileEmail">user@example.com</p>
+                <p>Member since: <span id="memberSince">2023</span></p>
+              </div>
+            </div>
+            
+            <div class="profile-content">
+              <div class="form-section">
+                <h4><i class="fas fa-user-edit"></i> Personal Information</h4>
+                <div class="form-row">
+                  <input type="text" id="profileFirstName" placeholder="First Name">
+                  <input type="text" id="profileLastName" placeholder="Last Name">
+                </div>
+                <input type="text" id="profileCompany" placeholder="Company Name">
+                <input type="text" id="profilePhone" placeholder="Phone Number">
+                <input type="text" id="profileAddress" placeholder="Address">
+                
+                <button id="updateProfile" class="success"><i class="fas fa-save"></i> Update Profile</button>
+              </div>
+              
+              <div class="form-section">
+                <h4><i class="fas fa-chart-pie"></i> Account Statistics</h4>
+                <div class="stats-container">
+                  <div class="stat-card">
+                    <div class="stat-value" id="profileTotalInvoices">0</div>
+                    <div class="stat-label">Total Invoices</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-value" id="profilePaidInvoices">0</div>
+                    <div class="stat-label">Paid Invoices</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-value" id="profileRevenue">0</div>
+                    <div class="stat-label">Total Revenue</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+// ===== Firebase Setup =====
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import { getDatabase, ref, push, onValue, update, remove, set, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBdBR8X0Ta8svH00gALoi1cs-wG2-dYvP8",
+  authDomain: "invoice-f92f5.firebaseapp.com",
+  databaseURL: "https://invoice-f92f5-default-rtdb.firebaseio.com",
+  projectId: "invoice-f92f5",
+  storageBucket: "invoice-f92f5.firebasestorage.app",
+  messagingSenderId: "601248319185",
+  appId: "1:601248319185:web:495b13f877efbdc32427f0",
+  measurementId: "G-VPMS4PKH4G"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+
+// ===== UI Elements =====
+const loginForm = document.getElementById("loginForm");
+const dashboard = document.getElementById("dashboard");
+const invoiceSystem = document.getElementById("invoice-system");
+const profileSection = document.getElementById("profile");
+const sidebar = document.getElementById("sidebar");
+const pageTitle = document.getElementById("pageTitle");
+const email = document.getElementById("email");
+const password = document.getElementById("password");
+const loginBtn = document.getElementById("loginBtn");
+const signupBtn = document.getElementById("signupBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+const sidebarLogout = document.getElementById("sidebarLogout");
+const errorMsg = document.getElementById("login-error-msg");
+const errorText = document.getElementById("error-text");
+const saveAlert = document.getElementById("save-alert");
+const saveMessage = document.getElementById("save-message");
+const tabs = document.querySelectorAll(".tab");
+const tabContents = document.querySelectorAll(".tab-content");
+const sidebarMenu = document.querySelectorAll(".sidebar-menu a");
+
+// ===== Login / Signup =====
+loginBtn.addEventListener("click", () => {
+  const emailVal = email.value;
+  const passwordVal = password.value;
+  
+  if (!emailVal || !passwordVal) {
+    showError("Please enter both email and password");
+    return;
+  }
+  
+  signInWithEmailAndPassword(auth, emailVal, passwordVal)
+    .then(() => {
+      // Login successful - UI will update via onAuthStateChanged
+    })
+    .catch(e => {
+      let errorMessage = "Login failed. Please try again.";
+      if (e.code === 'auth/user-not-found') {
+        errorMessage = "No account found with this email.";
+      } else if (e.code === 'auth/wrong-password') {
+        errorMessage = "Incorrect password.";
+      } else if (e.code === 'auth/invalid-email') {
+        errorMessage = "Invalid email address.";
+      }
+      showError(errorMessage);
+    });
+});
+
+function showError(message) {
+  errorText.textContent = message;
+  errorMsg.classList.remove("hidden");
+  
+  // Hide error after 5 seconds
+  setTimeout(() => {
+    errorMsg.classList.add("hidden");
+  }, 5000);
+}
+
+function showSaveAlert(message) {
+  saveMessage.textContent = message;
+  saveAlert.classList.remove("hidden");
+  
+  // Hide alert after 3 seconds
+  setTimeout(() => {
+    saveAlert.classList.add("hidden");
+  }, 3000);
+}
+
+signupBtn.addEventListener("click", () => {
+  const emailVal = prompt("Enter email:");
+  if (!emailVal) return;
+  
+  const passwordVal = prompt("Enter password:");
+  if (!passwordVal) return;
+  
+  if (passwordVal.length < 6) {
+    alert("Password should be at least 6 characters");
+    return;
+  }
+  
+  createUserWithEmailAndPassword(auth, emailVal, passwordVal)
+    .then(() => {
+      alert("Account created successfully! You can now login.");
+      email.value = emailVal;
+    })
+    .catch(e => {
+      let errorMessage = "Failed to create account. Please try again.";
+      if (e.code === 'auth/email-already-in-use') {
+        errorMessage = "An account with this email already exists.";
+      } else if (e.code === 'auth/invalid-email') {
+        errorMessage = "Invalid email address.";
+      } else if (e.code === 'auth/weak-password') {
+        errorMessage = "Password is too weak. Use at least 6 characters.";
+      }
+      alert(errorMessage);
+    });
+});
+
+logoutBtn.addEventListener("click", () => { 
+  signOut(auth).then(() => location.reload()); 
+});
+
+sidebarLogout.addEventListener("click", (e) => {
+  e.preventDefault();
+  signOut(auth).then(() => location.reload());
+});
+
+onAuthStateChanged(auth, user => {
+  if (user) {
+    loginForm.classList.add("hidden");
+    dashboard.classList.remove("hidden");
+    invoiceSystem.classList.add("hidden");
+    profileSection.classList.add("hidden");
+    sidebar.classList.remove("hidden");
+    
+    // Load user data
+    loadUserProfile(user);
+    loadInvoiceHistory(user.uid);
+    loadDashboardStats(user.uid);
+    
+    // Update welcome message
+    document.getElementById("welcomeMessage").textContent = `Welcome back, ${user.email}`;
+  } else {
+    loginForm.classList.remove("hidden");
+    dashboard.classList.add("hidden");
+    invoiceSystem.classList.add("hidden");
+    profileSection.classList.add("hidden");
+    sidebar.classList.add("hidden");
+  }
+});
+
+// ===== Navigation =====
+sidebarMenu.forEach(menuItem => {
+  menuItem.addEventListener("click", (e) => {
+    e.preventDefault();
+    
+    // Remove active class from all menu items
+    sidebarMenu.forEach(item => item.classList.remove("active"));
+    // Add active class to clicked menu item
+    menuItem.classList.add("active");
+    
+    const tab = menuItem.getAttribute("data-tab");
+    
+    // Hide all sections
+    dashboard.classList.add("hidden");
+    invoiceSystem.classList.add("hidden");
+    profileSection.classList.add("hidden");
+    
+    // Show selected section
+    if (tab === "dashboard") {
+      dashboard.classList.remove("hidden");
+      loadDashboardStats(auth.currentUser.uid);
+    } else if (tab === "create") {
+      invoiceSystem.classList.remove("hidden");
+      document.getElementById("create-tab").classList.remove("hidden");
+      document.getElementById("history-tab").classList.add("hidden");
+      
+      // Update tabs active state
+      tabs[0].classList.add("active");
+      tabs[1].classList.remove("active");
+    } else if (tab === "history") {
+      invoiceSystem.classList.remove("hidden");
+      document.getElementById("create-tab").classList.add("hidden");
+      document.getElementById("history-tab").classList.remove("hidden");
+      
+      // Update tabs active state
+      tabs[0].classList.remove("active");
+      tabs[1].classList.add("active");
+      
+      loadInvoiceHistory(auth.currentUser.uid);
+    } else if (tab === "profile") {
+      profileSection.classList.remove("hidden");
+      loadUserProfile(auth.currentUser);
+    }
+  });
+});
+
+// Quick navigation buttons
+document.getElementById("quickCreate").addEventListener("click", () => {
+  sidebarMenu[1].click();
+});
+
+document.getElementById("viewHistory").addEventListener("click", () => {
+  sidebarMenu[2].click();
+});
+
+// Tab navigation
+tabs.forEach(tab => {
+  tab.addEventListener("click", () => {
+    // Remove active class from all tabs
+    tabs.forEach(t => t.classList.remove("active"));
+    // Add active class to clicked tab
+    tab.classList.add("active");
+    
+    // Hide all tab contents
+    tabContents.forEach(content => content.classList.add("hidden"));
+    
+    // Show the selected tab content
+    const tabId = tab.getAttribute("data-tab") + "-tab";
+    document.getElementById(tabId).classList.remove("hidden");
+  });
+});
+
+// ===== Invoice Logic =====
+const addItemBtn = document.getElementById("addItem");
+const itemsContainer = document.getElementById("items-container");
+const canvas = document.getElementById("signatureCanvas");
+const ctx = canvas.getContext("2d");
+let drawing = false;
+
+// Initialize canvas with white background
+ctx.fillStyle = "#ffffff";
+ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+// Set up signature drawing
+canvas.addEventListener("mousedown", startDrawing);
+canvas.addEventListener("touchstart", startDrawingTouch);
+canvas.addEventListener("mouseup", stopDrawing);
+canvas.addEventListener("touchend", stopDrawing);
+canvas.addEventListener("mousemove", draw);
+canvas.addEventListener("touchmove", drawTouch);
+
+function startDrawing(e) {
+  drawing = true;
+  draw(e);
+}
+
+function startDrawingTouch(e) {
+  e.preventDefault();
+  drawing = true;
+  const touch = e.touches[0];
+  const mouseEvent = new MouseEvent("mousedown", {
+    clientX: touch.clientX,
+    clientY: touch.clientY
+  });
+  canvas.dispatchEvent(mouseEvent);
+}
+
+function stopDrawing() {
+  drawing = false;
+  ctx.beginPath();
+}
+
+function draw(e) {
+  if (!drawing) return;
+  
+  ctx.lineWidth = 2;
+  ctx.lineCap = "round";
+  ctx.strokeStyle = "#000";
+  
+  ctx.lineTo(e.offsetX, e.offsetY);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(e.offsetX, e.offsetY);
+}
+
+function drawTouch(e) {
+  e.preventDefault();
+  const touch = e.touches[0];
+  const rect = canvas.getBoundingClientRect();
+  const offsetX = touch.clientX - rect.left;
+  const offsetY = touch.clientY - rect.top;
+  
+  const mouseEvent = new MouseEvent("mousemove", {
+    clientX: touch.clientX,
+    clientY: touch.clientY,
+    offsetX: offsetX,
+    offsetY: offsetY
+  });
+  canvas.dispatchEvent(mouseEvent);
+}
+
+document.getElementById("clearSignature").addEventListener("click", () => {
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+});
+
+// Set today's date as default
+document.getElementById("invoiceDate").valueAsDate = new Date();
+
+// Generate invoice number
+function generateInvoiceNumber() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+  return `INV-${year}${month}${day}-${random}`;
+}
+
+document.getElementById("invoiceNumber").value = generateInvoiceNumber();
+
+// Add item row
+addItemBtn.addEventListener("click", () => {
+  const div = document.createElement("div");
+  div.className = "item-row";
+  div.innerHTML = `
+    <input type="text" class="description" placeholder="Description">
+    <input type="number" class="quantity" placeholder="Qty" min="1" value="1">
+    <input type="number" class="unitPrice" placeholder="Price" min="0" step="0.01">
+    <input type="number" class="total" placeholder="Total" readonly>
+    <button class="removeItem danger" title="Remove Item"><i class="fas fa-times"></i></button>
+  `;
+  itemsContainer.appendChild(div);
+  div.querySelector(".removeItem").addEventListener("click", () => div.remove());
+  
+  // Auto-calculate total when values change
+  const quantityInput = div.querySelector(".quantity");
+  const priceInput = div.querySelector(".unitPrice");
+  const totalInput = div.querySelector(".total");
+  
+  const calculateTotal = () => {
+    const qty = parseFloat(quantityInput.value) || 0;
+    const price = parseFloat(priceInput.value) || 0;
+    totalInput.value = (qty * price).toFixed(2);
+  };
+  
+  quantityInput.addEventListener("input", calculateTotal);
+  priceInput.addEventListener("input", calculateTotal);
+});
+
+// Calculate totals for existing rows
+itemsContainer.addEventListener("input", (e) => {
+  if (e.target.classList.contains("quantity") || e.target.classList.contains("unitPrice")) {
+    const row = e.target.closest(".item-row");
+    const qty = parseFloat(row.querySelector(".quantity").value) || 0;
+    const price = parseFloat(row.querySelector(".unitPrice").value) || 0;
+    row.querySelector(".total").value = (qty * price).toFixed(2);
+  }
+});
+
+// ===== Generate Invoice Preview =====
+document.getElementById("generateInvoice").addEventListener("click", () => {
+  const companyName = document.getElementById("companyName").value || "Your Company";
+  const date = document.getElementById("invoiceDate").value;
+  const invoiceNumber = document.getElementById("invoiceNumber").value;
+  const customerName = document.getElementById("customerName").value || "Customer";
+  const customerAddress = document.getElementById("customerAddress").value || "Address not provided";
+  const customerEmail = document.getElementById("customerEmail").value;
+  const discount = parseFloat(document.getElementById("discount").value) || 0;
+  const taxRate = parseFloat(document.getElementById("tax").value) || 0;
+  const notes = document.getElementById("notes").value;
+  let subtotal = 0;
+
+  const items = [];
+  document.querySelectorAll(".item-row").forEach(row => {
+    const desc = row.querySelector(".description").value;
+    const qty = parseFloat(row.querySelector(".quantity").value) || 0;
+    const price = parseFloat(row.querySelector(".unitPrice").value) || 0;
+    const total = qty * price;
+    subtotal += total;
+    
+    if (desc) {
+      items.push({ desc, qty, price, total });
+    }
+  });
+
+  const taxAmount = (subtotal * taxRate) / 100;
+  const grandTotal = subtotal - discount + taxAmount;
+
+  // Create HTML Table
+  let html = `
+    <div style="text-align:center;">
+      <h2>${companyName}</h2>
+      <h3>INVOICE</h3>
+    </div>
+    
+    <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+      <div>
+        <p><strong>Invoice #:</strong> ${invoiceNumber}<br>
+        <strong>Date:</strong> ${date}</p>
+      </div>
+      <div style="text-align: right;">
+        <p><strong>Bill To:</strong><br>
+        ${customerName}<br>
+        ${customerAddress}${customerEmail ? `<br>${customerEmail}` : ''}</p>
+      </div>
+    </div>
+    
+    <table class="invoice-table">
+      <tr>
+        <th>Description</th>
+        <th>Qty</th>
+        <th>Unit Price</th>
+        <th>Total</th>
+      </tr>`;
+
+  items.forEach(item => {
+    html += `
+      <tr>
+        <td>${item.desc}</td>
+        <td>${item.qty}</td>
+        <td>$${item.price.toFixed(2)}</td>
+        <td>$${item.total.toFixed(2)}</td>
+      </tr>`;
+  });
+
+  html += `
+    </table>
+    
+    <div class="invoice-footer">
+      <div style="float: right; width: 300px;">
+        <table style="width: 100%;">
+          <tr>
+            <td>Subtotal:</td>
+            <td style="text-align: right;">$${subtotal.toFixed(2)}</td>
+          </tr>
+          <tr>
+            <td>Discount:</td>
+            <td style="text-align: right;">-$${discount.toFixed(2)}</td>
+          </tr>
+          <tr>
+            <td>Tax (${taxRate}%):</td>
+            <td style="text-align: right;">$${taxAmount.toFixed(2)}</td>
+          </tr>
+          <tr style="font-weight: bold; border-top: 1px solid #ccc;">
+            <td>Grand Total:</td>
+            <td style="text-align: right;">$${grandTotal.toFixed(2)}</td>
+          </tr>
+        </table>
+        
+        ${notes ? `<p style="margin-top: 20px;"><strong>Notes:</strong> ${notes}</p>` : ''}
+        
+        <div style="margin-top: 30px;">
+          <p>Authorized Signature</p>
+          <img src="${canvas.toDataURL()}" alt="Signature" width="200">
+        </div>
+      </div>
+      <div style="clear: both;"></div>
+    </div>`;
+
+  document.getElementById("invoice-preview").innerHTML = html;
+
+  // Save to Firebase
+  const userId = auth.currentUser.uid;
+  const invoiceData = {
+    companyName,
+    date,
+    invoiceNumber,
+    customerName,
+    customerAddress,
+    customerEmail,
+    items,
+    discount,
+    tax: taxRate,
+    taxAmount,
+    subtotal,
+    grandTotal,
+    notes,
+    signature: canvas.toDataURL(),
+    status: 'sent',
+    createdAt: new Date().toISOString()
+  };
+  
+  push(ref(db, 'users/' + userId + '/invoices'), invoiceData)
+    .then(() => {
+      showSaveAlert('Invoice saved successfully!');
+      loadInvoiceHistory(userId);
+      loadDashboardStats(userId);
+    })
+    .catch(error => {
+      console.error('Error saving invoice:', error);
+      showSaveAlert('Error saving invoice. Please try again.');
+    });
+});
+
+// ===== Save Draft =====
+document.getElementById("saveDraft").addEventListener("click", () => {
+  const companyName = document.getElementById("companyName").value || "Your Company";
+  const date = document.getElementById("invoiceDate").value;
+  const invoiceNumber = document.getElementById("invoiceNumber").value;
+  const customerName = document.getElementById("customerName").value || "Customer";
+  const customerAddress = document.getElementById("customerAddress").value || "Address not provided";
+  const customerEmail = document.getElementById("customerEmail").value;
+  const discount = parseFloat(document.getElementById("discount").value) || 0;
+  const taxRate = parseFloat(document.getElementById("tax").value) || 0;
+  const notes = document.getElementById("notes").value;
+  let subtotal = 0;
+
+  const items = [];
+  document.querySelectorAll(".item-row").forEach(row => {
+    const desc = row.querySelector(".description").value;
+    const qty = parseFloat(row.querySelector(".quantity").value) || 0;
+    const price = parseFloat(row.querySelector(".unitPrice").value) || 0;
+    const total = qty * price;
+    subtotal += total;
+    
+    if (desc) {
+      items.push({ desc, qty, price, total });
+    }
+  });
+
+  const taxAmount = (subtotal * taxRate) / 100;
+  const grandTotal = subtotal - discount + taxAmount;
+
+  // Save to Firebase as draft
+  const userId = auth.currentUser.uid;
+  const invoiceData = {
+    companyName,
+    date,
+    invoiceNumber,
+    customerName,
+    customerAddress,
+    customerEmail,
+    items,
+    discount,
+    tax: taxRate,
+    taxAmount,
+    subtotal,
+    grandTotal,
+    notes,
+    signature: canvas.toDataURL(),
+    status: 'draft',
+    createdAt: new Date().toISOString()
+  };
+  
+  push(ref(db, 'users/' + userId + '/invoices'), invoiceData)
+    .then(() => {
+      showSaveAlert('Draft saved successfully!');
+      loadInvoiceHistory(userId);
+      loadDashboardStats(userId);
+    })
+    .catch(error => {
+      console.error('Error saving draft:', error);
+      showSaveAlert('Error saving draft. Please try again.');
+    });
+});
+
+// ===== Load Invoice History =====
+function loadInvoiceHistory(userId) {
+  const invoiceList = document.getElementById('invoiceList');
+  invoiceList.innerHTML = '<p>Loading invoices...</p>';
+  
+  const invoicesRef = ref(db, 'users/' + userId + '/invoices');
+  
+  onValue(invoicesRef, (snapshot) => {
+    const invoices = snapshot.val();
+    invoiceList.innerHTML = '';
+    
+    if (!invoices) {
+      invoiceList.innerHTML = '<p>No invoices found.</p>';
+      return;
+    }
+    
+    // Convert object to array and sort by date (newest first)
+    const invoiceArray = Object.entries(invoices).map(([id, invoice]) => ({
+      id,
+      ...invoice
+    })).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    
+    invoiceArray.forEach(invoice => {
+      const invoiceItem = document.createElement('div');
+      invoiceItem.className = 'invoice-item';
+      invoiceItem.innerHTML = `
+        <div class="invoice-item-header">
+          <span>${invoice.invoiceNumber}</span>
+          <span>$${invoice.grandTotal ? invoice.grandTotal.toFixed(2) : '0.00'}</span>
+        </div>
+        <div>
+          <p><strong>Customer:</strong> ${invoice.customerName}</p>
+          <p><strong>Date:</strong> ${invoice.date} | <strong>Status:</strong> 
+          <span style="color: ${invoice.status === 'paid' ? 'green' : invoice.status === 'sent' ? 'orange' : 'gray'}">
+            ${invoice.status}
+          </span></p>
+        </div>
+        <div style="margin-top: 10px; display: flex; gap: 10px;">
+          <button class="view-invoice secondary" data-id="${invoice.id}"><i class="fas fa-eye"></i> View</button>
+          <button class="edit-invoice secondary" data-id="${invoice.id}"><i class="fas fa-edit"></i> Edit</button>
+          <button class="delete-invoice danger" data-id="${invoice.id}"><i class="fas fa-trash"></i> Delete</button>
+          ${invoice.status === 'sent' ? 
+            `<button class="mark-paid success" data-id="${invoice.id}"><i class="fas fa-check"></i> Mark Paid</button>` : ''}
+        </div>
+      `;
+      
+      invoiceList.appendChild(invoiceItem);
+      
+      // Add event listeners for buttons
+      invoiceItem.querySelector('.view-invoice').addEventListener('click', () => {
+        viewInvoice(invoice);
+      });
+      
+      invoiceItem.querySelector('.edit-invoice').addEventListener('click', () => {
+        editInvoice(invoice.id, invoice);
+      });
+      
+      invoiceItem.querySelector('.delete-invoice').addEventListener('click', () => {
+        if (confirm('Are you sure you want to delete this invoice?')) {
+          deleteInvoice(userId, invoice.id);
+        }
+      });
+      
+      if (invoiceItem.querySelector('.mark-paid')) {
+        invoiceItem.querySelector('.mark-paid').addEventListener('click', () => {
+          markInvoiceAsPaid(userId, invoice.id);
+        });
+      }
+    });
+  });
+}
+
+// ===== View Invoice =====
+function viewInvoice(invoice) {
+  let html = `
+    <div style="text-align:center;">
+      <h2>${invoice.companyName}</h2>
+      <h3>INVOICE</h3>
+    </div>
+    
+    <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+      <div>
+        <p><strong>Invoice #:</strong> ${invoice.invoiceNumber}<br>
+        <strong>Date:</strong> ${invoice.date}</p>
+      </div>
+      <div style="text-align: right;">
+        <p><strong>Bill To:</strong><br>
+        ${invoice.customerName}<br>
+        ${invoice.customerAddress}${invoice.customerEmail ? `<br>${invoice.customerEmail}` : ''}</p>
+      </div>
+    </div>
+    
+    <table class="invoice-table">
+      <tr>
+        <th>Description</th>
+        <th>Qty</th>
+        <th>Unit Price</th>
+        <th>Total</th>
+      </tr>`;
+
+  invoice.items.forEach(item => {
+    html += `
+      <tr>
+        <td>${item.desc}</td>
+        <td>${item.qty}</td>
+        <td>$${item.price.toFixed(2)}</td>
+        <td>$${item.total.toFixed(2)}</td>
+      </tr>`;
+  });
+
+  html += `
+    </table>
+    
+    <div class="invoice-footer">
+      <div style="float: right; width: 300px;">
+        <table style="width: 100%;">
+          <tr>
+            <td>Subtotal:</td>
+            <td style="text-align: right;">$${invoice.subtotal.toFixed(2)}</td>
+          </tr>
+          <tr>
+            <td>Discount:</td>
+            <td style="text-align: right;">-$${invoice.discount.toFixed(2)}</td>
+          </tr>
+          <tr>
+            <td>Tax (${invoice.tax}%):</td>
+            <td style="text-align: right;">$${invoice.taxAmount.toFixed(2)}</td>
+          </tr>
+          <tr style="font-weight: bold; border-top: 1px solid #ccc;">
+            <td>Grand Total:</td>
+            <td style="text-align: right;">$${invoice.grandTotal.toFixed(2)}</td>
+          </tr>
+        </table>
+        
+        ${invoice.notes ? `<p style="margin-top: 20px;"><strong>Notes:</strong> ${invoice.notes}</p>` : ''}
+        
+        <div style="margin-top: 30px;">
+          <p>Authorized Signature</p>
+          <img src="${invoice.signature}" alt="Signature" width="200">
+        </div>
+      </div>
+      <div style="clear: both;"></div>
+    </div>`;
+
+  // Show in preview section
+  document.getElementById('invoice-preview').innerHTML = html;
+  
+  // Switch to create tab to show the preview
+  sidebarMenu[1].click();
+}
+
+// ===== Edit Invoice =====
+function editInvoice(invoiceId, invoice) {
+  // Populate form with invoice data
+  document.getElementById('companyName').value = invoice.companyName;
+  document.getElementById('invoiceDate').value = invoice.date;
+  document.getElementById('invoiceNumber').value = invoice.invoiceNumber;
+  document.getElementById('customerName').value = invoice.customerName;
+  document.getElementById('customerAddress').value = invoice.customerAddress;
+  document.getElementById('customerEmail').value = invoice.customerEmail || '';
+  document.getElementById('discount').value = invoice.discount;
+  document.getElementById('tax').value = invoice.tax;
+  document.getElementById('notes').value = invoice.notes || '';
+  
+  // Clear existing items
+  itemsContainer.innerHTML = '';
+  
+  // Add items
+  invoice.items.forEach(item => {
+    const div = document.createElement("div");
+    div.className = "item-row";
+    div.innerHTML = `
+      <input type="text" class="description" placeholder="Description" value="${item.desc}">
+      <input type="number" class="quantity" placeholder="Qty" min="1" value="${item.qty}">
+      <input type="number" class="unitPrice" placeholder="Price" min="0" step="0.01" value="${item.price}">
+      <input type="number" class="total" placeholder="Total" readonly value="${item.total}">
+      <button class="removeItem danger" title="Remove Item"><i class="fas fa-times"></i></button>
+    `;
+    itemsContainer.appendChild(div);
+    div.querySelector(".removeItem").addEventListener("click", () => div.remove());
+  });
+  
+  // Load signature
+  const img = new Image();
+  img.src = invoice.signature;
+  img.onload = function() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  };
+  
+  // Switch to create tab
+  sidebarMenu[1].click();
+  
+  // Update generate button to save changes
+  const generateBtn = document.getElementById('generateInvoice');
+  const originalText = generateBtn.innerHTML;
+  generateBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Update Invoice';
+  
+  generateBtn.onclick = function() {
+    // Save updated invoice
+    const userId = auth.currentUser.uid;
+    const invoiceRef = ref(db, 'users/' + userId + '/invoices/' + invoiceId);
+    
+    // Get updated values
+    const companyName = document.getElementById("companyName").value || "Your Company";
+    const date = document.getElementById("invoiceDate").value;
+    const invoiceNumber = document.getElementById("invoiceNumber").value;
+    const customerName = document.getElementById("customerName").value || "Customer";
+    const customerAddress = document.getElementById("customerAddress").value || "Address not provided";
+    const customerEmail = document.getElementById("customerEmail").value;
+    const discount = parseFloat(document.getElementById("discount").value) || 0;
+    const taxRate = parseFloat(document.getElementById("tax").value) || 0;
+    const notes = document.getElementById("notes").value;
+    let subtotal = 0;
+
+    const items = [];
+    document.querySelectorAll(".item-row").forEach(row => {
+      const desc = row.querySelector(".description").value;
+      const qty = parseFloat(row.querySelector(".quantity").value) || 0;
+      const price = parseFloat(row.querySelector(".unitPrice").value) || 0;
+      const total = qty * price;
+      subtotal += total;
+      
+      if (desc) {
+        items.push({ desc, qty, price, total });
+      }
+    });
+
+    const taxAmount = (subtotal * taxRate) / 100;
+    const grandTotal = subtotal - discount + taxAmount;
+
+    const updatedInvoice = {
+      companyName,
+      date,
+      invoiceNumber,
+      customerName,
+      customerAddress,
+      customerEmail,
+      items,
+      discount,
+      tax: taxRate,
+      taxAmount,
+      subtotal,
+      grandTotal,
+      notes,
+      signature: canvas.toDataURL(),
+      status: 'sent',
+      updatedAt: new Date().toISOString()
+    };
+    
+    update(invoiceRef, updatedInvoice)
+      .then(() => {
+        showSaveAlert('Invoice updated successfully!');
+        generateBtn.innerHTML = originalText;
+        generateBtn.onclick = originalGenerateHandler;
+        loadInvoiceHistory(userId);
+        loadDashboardStats(userId);
+      })
+      .catch(error => {
+        console.error('Error updating invoice:', error);
+        showSaveAlert('Error updating invoice. Please try again.');
+      });
+  };
+  
+  // Store original handler
+  const originalGenerateHandler = generateBtn.onclick;
+}
+
+// ===== Delete Invoice =====
+function deleteInvoice(userId, invoiceId) {
+  const invoiceRef = ref(db, 'users/' + userId + '/invoices/' + invoiceId);
+  remove(invoiceRef)
+    .then(() => {
+      showSaveAlert('Invoice deleted successfully!');
+      loadInvoiceHistory(userId);
+      loadDashboardStats(userId);
+    })
+    .catch(error => {
+      console.error('Error deleting invoice:', error);
+      showSaveAlert('Error deleting invoice. Please try again.');
+    });
+}
+
+// ===== Mark Invoice as Paid =====
+function markInvoiceAsPaid(userId, invoiceId) {
+  const invoiceRef = ref(db, 'users/' + userId + '/invoices/' + invoiceId);
+  update(invoiceRef, { 
+    status: 'paid',
+    paidAt: new Date().toISOString()
+  })
+    .then(() => {
+      showSaveAlert('Invoice marked as paid!');
+      loadInvoiceHistory(userId);
+      loadDashboardStats(userId);
+    })
+    .catch(error => {
+      console.error('Error updating invoice:', error);
+      showSaveAlert('Error updating invoice status. Please try again.');
+    });
+}
+
+// ===== Download PDF =====
+document.getElementById("downloadInvoice").addEventListener("click", () => {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('p', 'pt', 'a4');
+  const preview = document.getElementById("invoice-preview");
+  
+  if (!preview.innerHTML) {
+    alert("Please generate an invoice first.");
+    return;
+  }
+  
+  doc.html(preview, {
+    callback: function(pdf) { 
+      pdf.save("invoice.pdf"); 
+    },
+    x: 20, 
+    y: 20, 
+    width: 555,
+    windowWidth: 800
+  });
+});
+
+// ===== Share Invoice =====
+document.getElementById("shareInvoice").addEventListener("click", async () => {
+  const preview = document.getElementById("invoice-preview");
+  
+  if (!preview.innerHTML) {
+    alert("Please generate an invoice first.");
+    return;
+  }
+  
+  try {
+    // Use html2canvas to capture the invoice as an image
+    const canvas = await html2canvas(preview, {
+      scale: 2, // Higher quality
+      useCORS: true,
+      allowTaint: true
+    });
+    
+    canvas.toBlob(async function(blob) {
+      const file = new File([blob], 'invoice.png', { type: 'image/png' });
+      
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: 'Invoice',
+            text: 'Here is your invoice'
+          });
+        } catch (shareError) {
+          console.error('Error sharing:', shareError);
+          // Fallback: download the image
+          downloadImage(canvas);
+        }
+      } else {
+        // Fallback: download the image
+        downloadImage(canvas);
+      }
+    });
+  } catch(e) {
+    console.error("Error sharing:", e);
+    alert("Sharing not supported. Download instead.");
+  }
+});
+
+function downloadImage(canvas) {
+  const link = document.createElement('a');
+  link.download = 'invoice.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+// ===== Search and Filter Invoices =====
+document.getElementById('searchInvoices').addEventListener('input', (e) => {
+  const searchTerm = e.target.value.toLowerCase();
+  const invoiceItems = document.querySelectorAll('.invoice-item');
+  
+  invoiceItems.forEach(item => {
+    const text = item.textContent.toLowerCase();
+    if (text.includes(searchTerm)) {
+      item.style.display = 'block';
+    } else {
+      item.style.display = 'none';
+    }
+  });
+});
+
+document.getElementById('filterStatus').addEventListener('change', (e) => {
+  const status = e.target.value;
+  const invoiceItems = document.querySelectorAll('.invoice-item');
+  
+  invoiceItems.forEach(item => {
+    if (status === 'all') {
+      item.style.display = 'block';
+    } else {
+      const itemStatus = item.querySelector('span[style*="color"]').textContent.trim();
+      if (itemStatus === status) {
+        item.style.display = 'block';
+      } else {
+        item.style.display = 'none';
+      }
+    }
+  });
+});
+
+// ===== Profile Management =====
+function loadUserProfile(user) {
+  // Set basic user info
+  document.getElementById('profileName').textContent = user.displayName || user.email;
+  document.getElementById('profileEmail').textContent = user.email;
+  document.getElementById('memberSince').textContent = new Date(user.metadata.creationTime).getFullYear();
+  
+  // Load profile data from database
+  const userRef = ref(db, 'users/' + user.uid + '/profile');
+  
+  get(userRef).then((snapshot) => {
+    if (snapshot.exists()) {
+      const profile = snapshot.val();
+      document.getElementById('profileFirstName').value = profile.firstName || '';
+      document.getElementById('profileLastName').value = profile.lastName || '';
+      document.getElementById('profileCompany').value = profile.company || '';
+      document.getElementById('profilePhone').value = profile.phone || '';
+      document.getElementById('profileAddress').value = profile.address || '';
+    }
+  });
+  
+  // Load profile stats
+  loadProfileStats(user.uid);
+}
+
+document.getElementById('updateProfile').addEventListener('click', () => {
+  const userId = auth.currentUser.uid;
+  const userRef = ref(db, 'users/' + userId + '/profile');
+  
+  const profileData = {
+    firstName: document.getElementById('profileFirstName').value,
+    lastName: document.getElementById('profileLastName').value,
+    company: document.getElementById('profileCompany').value,
+    phone: document.getElementById('profilePhone').value,
+    address: document.getElementById('profileAddress').value,
+    updatedAt: new Date().toISOString()
+  };
+  
+  set(userRef, profileData)
+    .then(() => {
+      showSaveAlert('Profile updated successfully!');
+      
+      // Update display name if first and last name are provided
+      if (profileData.firstName && profileData.lastName) {
+        updateProfile(auth.currentUser, {
+          displayName: `${profileData.firstName} ${profileData.lastName}`
+        }).then(() => {
+          document.getElementById('profileName').textContent = `${profileData.firstName} ${profileData.lastName}`;
+        });
+      }
+    })
+    .catch(error => {
+      console.error('Error updating profile:', error);
+      showSaveAlert('Error updating profile. Please try again.');
+    });
+});
+
+function loadProfileStats(userId) {
+  const invoicesRef = ref(db, 'users/' + userId + '/invoices');
+  
+  onValue(invoicesRef, (snapshot) => {
+    const invoices = snapshot.val();
+    let totalInvoices = 0;
+    let paidInvoices = 0;
+    let totalRevenue = 0;
+    
+    if (invoices) {
+      Object.values(invoices).forEach(invoice => {
+        totalInvoices++;
+        if (invoice.status === 'paid') {
+          paidInvoices++;
+        }
+        if (invoice.grandTotal) {
+          totalRevenue += invoice.grandTotal;
+        }
+      });
+    }
+    
+    document.getElementById('profileTotalInvoices').textContent = totalInvoices;
+    document.getElementById('profilePaidInvoices').textContent = paidInvoices;
+    document.getElementById('profileRevenue').textContent = `$${totalRevenue.toFixed(2)}`;
+  });
+}
+
+// ===== Dashboard Stats =====
+function loadDashboardStats(userId) {
+  const invoicesRef = ref(db, 'users/' + userId + '/invoices');
+  
+  onValue(invoicesRef, (snapshot) => {
+    const invoices = snapshot.val();
+    let totalInvoices = 0;
+    let paidInvoices = 0;
+    let pendingInvoices = 0;
+    
+    if (invoices) {
+      Object.values(invoices).forEach(invoice => {
+        totalInvoices++;
+        if (invoice.status === 'paid') {
+          paidInvoices++;
+        } else if (invoice.status === 'sent') {
+          pendingInvoices++;
+        }
+      });
+    }
+    
+    document.getElementById('totalInvoices').textContent = totalInvoices;
+    document.getElementById('paidInvoices').textContent = paidInvoices;
+    document.getElementById('pendingInvoices').textContent = pendingInvoices;
+    
+    // Load recent invoices
+    loadRecentInvoices(invoices);
+  });
+}
+
+function loadRecentInvoices(invoices) {
+  const recentInvoices = document.getElementById('recentInvoices');
+  recentInvoices.innerHTML = '';
+  
+  if (!invoices) {
+    recentInvoices.innerHTML = '<p>No recent invoices.</p>';
+    return;
+  }
+  
+  // Convert to array and sort by date
+  const invoiceArray = Object.entries(invoices).map(([id, invoice]) => ({
+    id,
+    ...invoice
+  })).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 5);
+  
+  invoiceArray.forEach(invoice => {
+    const invoiceItem = document.createElement('div');
+    invoiceItem.className = 'invoice-item';
+    invoiceItem.innerHTML = `
+      <div class="invoice-item-header">
+        <span>${invoice.invoiceNumber}</span>
+        <span>$${invoice.grandTotal ? invoice.grandTotal.toFixed(2) : '0.00'}</span>
+      </div>
+      <div>
+        <p><strong>Customer:</strong> ${invoice.customerName}</p>
+        <p><strong>Date:</strong> ${invoice.date} | <strong>Status:</strong> 
+        <span style="color: ${invoice.status === 'paid' ? 'green' : invoice.status === 'sent' ? 'orange' : 'gray'}">
+          ${invoice.status}
+        </span></p>
+      </div>
+    `;
+    
+    invoiceItem.addEventListener('click', () => {
+      viewInvoice(invoice);
+    });
+    
+    recentInvoices.appendChild(invoiceItem);
+  });
+}
+</script>
+
+</body>
+</html>
